@@ -10,6 +10,8 @@ dependencies = [
     "pydantic-settings>=2.6",
     "livekit-api>=0.9",
     "livekit>=0.20",
+    "websockets>=13.0",
+    "supabase>=2.9",
 ]
 
 [project.optional-dependencies]

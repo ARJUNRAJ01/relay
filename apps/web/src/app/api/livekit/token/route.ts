@@ -30,9 +30,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "transport not found or not visible to you" }, { status: 404 });
   }
 
+  // Only the medic app calls this route today, so the publisher is always
+  // the medic's own device — this is the sole diarization signal the AI
+  // service's capture pipeline has (see services/ai/app/capture.py). A
+  // second medic device or a bystander's phone would need its own token
+  // route (or a param here) setting a different `speaker` value.
   const token = new AccessToken(serverEnv.LIVEKIT_API_KEY, serverEnv.LIVEKIT_API_SECRET, {
     identity: user.id,
     name: user.email ?? user.id,
+    metadata: JSON.stringify({ speaker: "medic" }),
     ttl: "10m",
   });
   token.addGrant({

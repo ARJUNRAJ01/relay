@@ -5,6 +5,7 @@ import { Room, RoomEvent, ConnectionState, LocalAudioTrack } from "livekit-clien
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { LiveTranscript } from "@/components/live-transcript";
 import { env } from "@/lib/env";
 import { endTransport } from "@/app/medic/actions";
 
@@ -86,7 +87,7 @@ export function MedicCapture({
         <h1 className="text-2xl font-semibold">{hospitalName}</h1>
       </header>
 
-      <main className="flex flex-1 flex-col items-center justify-center gap-6 px-6">
+      <main className="flex flex-1 flex-col items-center gap-6 px-6 pt-4">
         <StatusBadge status={status} />
         <Waveform level={level} active={status === "connected"} />
         <p className="text-center text-sm text-zinc-500">
@@ -98,6 +99,11 @@ export function MedicCapture({
                 ? "Connection failed — check signal and retry."
                 : "Disconnected."}
         </p>
+
+        <div className="flex w-full flex-1 flex-col gap-2 overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 p-4">
+          <span className="text-xs uppercase tracking-wide text-zinc-500">Live transcript</span>
+          <LiveTranscript transportId={transportId} dark />
+        </div>
       </main>
 
       <footer className="px-6 pb-10 pt-4">

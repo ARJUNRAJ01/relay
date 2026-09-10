@@ -22,9 +22,11 @@ class Settings(BaseSettings):
     audio_storage_backend: str = Field(default="local", alias="AUDIO_STORAGE_BACKEND")
     audio_storage_dir: str = Field(default="./recordings", alias="AUDIO_STORAGE_DIR")
 
-    # --- Later phases: optional until that phase is built ---
+    # --- Phase 3: required now ---
     asr_provider: str = Field(default="cartesia", alias="ASR_PROVIDER")
-    cartesia_api_key: str | None = Field(default=None, alias="CARTESIA_API_KEY")
+    cartesia_api_key: str = Field(alias="CARTESIA_API_KEY")
+
+    # --- Later phases: optional until that phase is built ---
     deepgram_api_key: str | None = Field(default=None, alias="DEEPGRAM_API_KEY")
 
     llm_provider: str = Field(default="deepseek", alias="LLM_PROVIDER")
