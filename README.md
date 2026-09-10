@@ -7,7 +7,7 @@ crew clears the bay faster for the next call.
 
 See [REGULATORY.md](./REGULATORY.md) for the FDA/SaMD posture this pilot is built around.
 
-## Status: Phase 5 — Alerts
+## Status: Phase 6 — Offline
 
 - [x] Monorepo layout (`apps/web`, `services/ai`, `supabase/`)
 - [x] Supabase project, schema, and RLS (`supabase/migrations/`)
@@ -26,7 +26,10 @@ See [REGULATORY.md](./REGULATORY.md) for the FDA/SaMD posture this pilot is buil
       deterioration, and contraindication detection, each confidence-gated
       against its source transcript spans, with paging (stubbed — see
       below) and a top-anchored acknowledgment banner capped at 3 — Phase 5
-- [ ] Offline queue — Phase 6
+- [x] Offline: the medic app records locally (IndexedDB-backed) whenever
+      LiveKit fully disconnects, and reconciles that audio into the
+      timeline — decoded, transcribed, and correctly offset — the moment
+      it reconnects, so a real network outage loses nothing — Phase 6
 - [ ] MCI mode — Phase 7
 - [ ] Polish / accessibility / load test — Phase 8
 
@@ -98,6 +101,42 @@ docstrings in `services/ai/app/asr/cartesia.py` for detail):
   ASR segment reports the same placeholder confidence (see the phase 3 gap
   above) — it'll start doing something the moment that's fixed.
 
+**Phase 6 gaps, flagged rather than hidden** (see the module docstring in
+`apps/web/src/lib/offline-queue.ts`):
+- **No local ASR fallback.** The spec asks for whisper.cpp running on-device
+  so the medic sees *something* during the outage itself. I scoped that out
+  of this pass — the best available browser package
+  (`@remotion/whisper-web`) needs `SharedArrayBuffer`, which means adding
+  cross-origin-isolation headers app-wide, and its own maintainers call it
+  experimental and now recommend a different (WebGPU) package with weaker
+  phone-browser support. The part that actually prevents data loss — local
+  recording, queuing, and reconciliation — doesn't depend on this at all;
+  during an outage the medic sees "recording on this device, nothing is
+  lost" rather than a live local transcript.
+- **A few hundred ms to a couple seconds can still be lost** at the very
+  start of a disconnect — MediaRecorder only starts once the app detects
+  the drop, and LiveKit's own reconnect grace period runs first. Not
+  zero-loss to the millisecond; flagged rather than implied otherwise.
+- **Reconciled segment timing is offset-based, not re-anchored.** The
+  server trusts the client's `gapStartS` (elapsed time since the mic
+  published) and lays the reconciled transcript down from there — it
+  doesn't cross-check against the live segment immediately before/after
+  the gap. A significant client/server clock or elapsed-time drift would
+  skew segment boundaries after the gap.
+- Needs `ffmpeg` on the AI service's `PATH` to decode the browser's
+  WebM/Opus recording back to PCM — a new local/deployment prerequisite,
+  same category as Docker for LiveKit.
+- Verified with a full request through the real Next.js route (auth check
+  → shared-secret forward → AI service → ffmpeg → Cartesia → DB), using a
+  real browser-generated `MediaRecorder` WebM blob from a synthetic audio
+  source (no mic needed) rather than the sandboxed test browser's absent
+  microphone — plus a direct IndexedDB check confirming out-of-order
+  chunks are stored, sorted, and cleared correctly. The
+  connection-state-triggered orchestration inside `medic-capture.tsx`
+  (auto-start/stop recording on LiveKit disconnect/reconnect) is code-
+  reviewed and type-checked but not exercised end-to-end here, since that
+  needs `getUserMedia`, which this sandbox's browser doesn't have.
+
 ## Layout
 
 ```
@@ -133,6 +172,10 @@ Copy `apps/web/.env.local.example` to `apps/web/.env.local` and fill in values
 now — LiveKit/AI-service/paging vars become required as later phases land.
 
 ### AI service
+
+Needs `ffmpeg` on `PATH` (phase 6 uses it to decode the medic app's offline
+recordings) — `winget install Gyan.FFmpeg` on Windows, `brew install ffmpeg`
+on macOS, or your distro's package manager on Linux.
 
 ```bash
 cd services/ai
@@ -178,6 +221,13 @@ venv is activated).
    `/hospital/<id>` and as a count badge on the `/hospital` board;
    **Acknowledge** clears it.
 7. Raw audio also lands at `services/ai/recordings/<transport_id>/<identity>.wav`.
+8. Kill the medic's connection mid-run (e.g. `docker compose stop` in
+   `infra/livekit/`) and the medic screen shows "recording on this device,
+   nothing is lost" while it buffers audio into IndexedDB locally. Bring
+   LiveKit back (`docker compose start`) and it automatically uploads the
+   buffered audio to `/api/transports/<id>/reconcile-audio`, which
+   decodes, transcribes, and inserts it into the timeline at the correct
+   offset — the transcript and report both end up complete with no gap.
 
 A real phone won't have this microphone problem, but the browser sandbox
 used to smoke test this build has none and denies `getUserMedia`, so the
