@@ -7,7 +7,7 @@ crew clears the bay faster for the next call.
 
 See [REGULATORY.md](./REGULATORY.md) for the FDA/SaMD posture this pilot is built around.
 
-## Status: Phase 6 — Offline
+## Status: Phase 7 — MCI mode
 
 - [x] Monorepo layout (`apps/web`, `services/ai`, `supabase/`)
 - [x] Supabase project, schema, and RLS (`supabase/migrations/`)
@@ -30,7 +30,10 @@ See [REGULATORY.md](./REGULATORY.md) for the FDA/SaMD posture this pilot is buil
       LiveKit fully disconnects, and reconciles that audio into the
       timeline — decoded, transcribed, and correctly offset — the moment
       it reconnects, so a real network outage loses nothing — Phase 6
-- [ ] MCI mode — Phase 7
+- [x] MCI mode: a medic can tag a transport as part of an incident when
+      starting it; the hospital board groups those under a
+      collapsed-by-default incident summary (name, unit count, most severe
+      acuity), expandable to a severity-ranked list — Phase 7
 - [ ] Polish / accessibility / load test — Phase 8
 
 **Running fully local for now:** self-hosted LiveKit via Docker, audio
@@ -137,6 +140,25 @@ docstrings in `services/ai/app/asr/cartesia.py` for detail):
   reviewed and type-checked but not exercised end-to-end here, since that
   needs `getUserMedia`, which this sandbox's browser doesn't have.
 
+**Phase 7 gaps, flagged rather than hidden:**
+- **No incident-closing UI.** An incident just stops appearing once none of
+  its transports are `active` anymore — there's no explicit "close this
+  incident" action, and no editing an incident's name/kind after creation.
+- **Incident membership is medic-declared, not location-inferred.** A crew
+  responding to the same physical scene has to actually pick (or type) the
+  same incident name when starting their transport; nothing cross-checks
+  GPS or dispatch data to group runs automatically.
+- Found and fixed a real, unrelated bug while wiring this phase's severity
+  sort: `transports.acuity` was never written anywhere — the triage
+  acuity score only ever lived inside `reports.soap`. It's now synced
+  onto the transport row every time a report regenerates (see
+  `report_store.update_transport_acuity`), which is also what makes the
+  acuity badge on the ordinary (non-incident) board cards mean anything.
+- Verified live: three units tagged to one incident, with different acuity
+  scores, correctly group under a collapsed-by-default summary (name, unit
+  count, most-severe badge) and expand into a severity-ranked list (most
+  severe first), with an unrelated standalone transport staying separate.
+
 ## Layout
 
 ```
@@ -228,6 +250,12 @@ venv is activated).
    buffered audio to `/api/transports/<id>/reconcile-audio`, which
    decodes, transcribes, and inserts it into the timeline at the correct
    offset — the transcript and report both end up complete with no gap.
+9. On `/medic`, optionally name (or pick an existing) mass casualty
+   incident before hitting **Start transport**. Other units doing the same
+   for the same incident group together on `/hospital` under a
+   collapsed-by-default summary (unit count, most severe acuity) — click
+   to expand into a severity-ranked list, most severe first. A transport
+   not part of an incident behaves exactly as before.
 
 A real phone won't have this microphone problem, but the browser sandbox
 used to smoke test this build has none and denies `getUserMedia`, so the

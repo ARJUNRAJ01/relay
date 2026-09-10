@@ -67,3 +67,17 @@ async def insert_claims(claims: list[dict]) -> None:
         await asyncio.to_thread(_insert)
     except Exception:
         logger.exception("failed to insert report claims")
+
+
+async def update_transport_acuity(transport_id: str, score: int) -> None:
+    """Keeps transports.acuity (used by the hospital board's severity sort
+    and badge) in sync with the latest report's triage_acuity — otherwise
+    that column just sits null forever, since nothing else ever writes it."""
+
+    def _update() -> None:
+        get_client().table("transports").update({"acuity": score}).eq("id", transport_id).execute()
+
+    try:
+        await asyncio.to_thread(_update)
+    except Exception:
+        logger.exception("failed to update transport acuity for %s", transport_id)

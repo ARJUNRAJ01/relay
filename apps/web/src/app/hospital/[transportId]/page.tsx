@@ -1,5 +1,7 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { Badge } from "@/components/ui/badge";
 import { HospitalSplitView } from "@/components/hospital-split-view";
 
 export default async function HospitalTransportPage({
@@ -18,7 +20,7 @@ export default async function HospitalTransportPage({
 
   const { data: transport } = await supabase
     .from("transports")
-    .select("id, status, acuity, units(callsign, name)")
+    .select("id, status, acuity, incident_id, units(callsign, name), incidents(name)")
     .eq("id", transportId)
     .maybeSingle();
 
@@ -27,12 +29,20 @@ export default async function HospitalTransportPage({
   }
 
   const unit = transport.units as { callsign: string; name: string } | null;
+  const incident = transport.incidents as { name: string } | null;
 
   return (
     <div className="flex flex-1 flex-col gap-6 bg-zinc-50 px-8 py-10">
       <header className="flex flex-col gap-1">
         <span className="text-sm text-muted-foreground">Incoming from</span>
-        <h1 className="text-2xl font-semibold">{unit?.callsign ?? "Unknown unit"}</h1>
+        <div className="flex items-center gap-3">
+          <h1 className="text-2xl font-semibold">{unit?.callsign ?? "Unknown unit"}</h1>
+          {incident && (
+            <Link href="/hospital">
+              <Badge variant="destructive">Incident: {incident.name}</Badge>
+            </Link>
+          )}
+        </div>
       </header>
 
       <HospitalSplitView transportId={transport.id} />

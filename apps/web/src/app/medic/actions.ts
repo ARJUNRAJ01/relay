@@ -28,9 +28,28 @@ export async function startTransport(formData: FormData) {
     throw new Error("Only a medic assigned to a unit can start a transport.");
   }
 
+  let incidentId = formData.get("incidentId");
+  const newIncidentName = formData.get("newIncidentName");
+  if (typeof newIncidentName === "string" && newIncidentName.trim()) {
+    const { data: incident, error: incidentError } = await supabase
+      .from("incidents")
+      .insert({ name: newIncidentName.trim(), kind: "mci" })
+      .select("id")
+      .single();
+    if (incidentError || !incident) {
+      throw new Error(incidentError?.message ?? "Failed to create incident");
+    }
+    incidentId = incident.id;
+  }
+
   const { data: transport, error } = await supabase
     .from("transports")
-    .insert({ unit_id: profile.unit_id, hospital_id: hospitalId, status: "active" })
+    .insert({
+      unit_id: profile.unit_id,
+      hospital_id: hospitalId,
+      status: "active",
+      incident_id: typeof incidentId === "string" && incidentId ? incidentId : null,
+    })
     .select("id")
     .single();
 

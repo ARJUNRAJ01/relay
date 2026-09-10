@@ -154,6 +154,10 @@ async def _generate(transport_id: str) -> None:
     await report_store.insert_claims(claims)
     logger.info("report v%d generated for transport %s (%d claims)", version, transport_id, len(claims))
 
+    triage_score = (extracted.get("triage_acuity") or {}).get("score")
+    if isinstance(triage_score, int) and 1 <= triage_score <= 5:
+        await report_store.update_transport_acuity(transport_id, triage_score)
+
     try:
         await alerts.evaluate_and_fire(
             transport_id=transport_id,

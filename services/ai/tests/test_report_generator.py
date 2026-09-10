@@ -96,9 +96,13 @@ async def test_generate_maps_indices_and_drops_unsourced_claims(monkeypatch):
     async def fake_insert_claims(claims):
         captured_claims.extend(claims)
 
+    async def fake_update_transport_acuity(transport_id, score):
+        pass
+
     monkeypatch.setattr(report_generator.report_store, "get_latest", fake_get_latest)
     monkeypatch.setattr(report_generator.report_store, "insert_report", fake_insert_report)
     monkeypatch.setattr(report_generator.report_store, "insert_claims", fake_insert_claims)
+    monkeypatch.setattr(report_generator.report_store, "update_transport_acuity", fake_update_transport_acuity)
 
     await report_generator._generate("tx-1")
 
@@ -142,10 +146,86 @@ async def test_generate_clamps_out_of_range_confidence(monkeypatch):
     async def fake_insert_claims(claims):
         captured_claims.extend(claims)
 
+    async def fake_update_transport_acuity(transport_id, score):
+        pass
+
     monkeypatch.setattr(report_generator.report_store, "get_latest", fake_get_latest)
     monkeypatch.setattr(report_generator.report_store, "insert_report", fake_insert_report)
     monkeypatch.setattr(report_generator.report_store, "insert_claims", fake_insert_claims)
+    monkeypatch.setattr(report_generator.report_store, "update_transport_acuity", fake_update_transport_acuity)
 
     await report_generator._generate("tx-1")
 
     assert captured_claims[0]["confidence"] == 1.0
+
+
+async def test_generate_syncs_triage_acuity_to_transports_table(monkeypatch):
+    """transports.acuity (the hospital board's severity sort/badge) has to
+    be kept in sync from the report — nothing else writes it."""
+    segments = make_segments(1)
+
+    async def fake_list_segments(transport_id):
+        return segments
+
+    monkeypatch.setattr(report_generator.transcript_store, "list_segments", fake_list_segments)
+    monkeypatch.setattr(
+        report_generator,
+        "get_llm_provider",
+        lambda: FakeLLM({"triage_acuity": {"score": 2, "reasoning": "stable"}, "claims": []}),
+    )
+
+    async def fake_get_latest(transport_id):
+        return None
+
+    async def fake_insert_report(**kwargs):
+        return "report-1"
+
+    async def fake_insert_claims(claims):
+        pass
+
+    acuity_updates = []
+
+    async def fake_update_transport_acuity(transport_id, score):
+        acuity_updates.append((transport_id, score))
+
+    monkeypatch.setattr(report_generator.report_store, "get_latest", fake_get_latest)
+    monkeypatch.setattr(report_generator.report_store, "insert_report", fake_insert_report)
+    monkeypatch.setattr(report_generator.report_store, "insert_claims", fake_insert_claims)
+    monkeypatch.setattr(report_generator.report_store, "update_transport_acuity", fake_update_transport_acuity)
+
+    await report_generator._generate("tx-1")
+
+    assert acuity_updates == [("tx-1", 2)]
+
+
+async def test_generate_ignores_missing_or_invalid_triage_acuity(monkeypatch):
+    segments = make_segments(1)
+
+    async def fake_list_segments(transport_id):
+        return segments
+
+    monkeypatch.setattr(report_generator.transcript_store, "list_segments", fake_list_segments)
+    monkeypatch.setattr(report_generator, "get_llm_provider", lambda: FakeLLM({"claims": []}))
+
+    async def fake_get_latest(transport_id):
+        return None
+
+    async def fake_insert_report(**kwargs):
+        return "report-1"
+
+    async def fake_insert_claims(claims):
+        pass
+
+    acuity_updates = []
+
+    async def fake_update_transport_acuity(transport_id, score):
+        acuity_updates.append((transport_id, score))
+
+    monkeypatch.setattr(report_generator.report_store, "get_latest", fake_get_latest)
+    monkeypatch.setattr(report_generator.report_store, "insert_report", fake_insert_report)
+    monkeypatch.setattr(report_generator.report_store, "insert_claims", fake_insert_claims)
+    monkeypatch.setattr(report_generator.report_store, "update_transport_acuity", fake_update_transport_acuity)
+
+    await report_generator._generate("tx-1")
+
+    assert acuity_updates == []

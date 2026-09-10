@@ -28,6 +28,11 @@ export default async function MedicHome() {
   }
 
   const { data: hospitals } = await supabase.from("hospitals").select("id, name").order("name");
+  const { data: openIncidents } = await supabase
+    .from("incidents")
+    .select("id, name")
+    .is("closed_at", null)
+    .order("opened_at", { ascending: false });
 
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-6 bg-zinc-950 px-4 py-16 text-zinc-50">
@@ -64,6 +69,32 @@ export default async function MedicHome() {
                 ))}
               </select>
             </div>
+
+            <div className="flex flex-col gap-2 border-t border-zinc-800 pt-4">
+              <label htmlFor="incidentId" className="text-sm text-zinc-400">
+                Mass casualty incident (optional)
+              </label>
+              <select
+                id="incidentId"
+                name="incidentId"
+                defaultValue=""
+                className="h-12 rounded-md border border-zinc-700 bg-zinc-950 px-3 text-base text-zinc-50"
+              >
+                <option value="">Not part of an incident</option>
+                {(openIncidents ?? []).map((i) => (
+                  <option key={i.id} value={i.id}>
+                    {i.name}
+                  </option>
+                ))}
+              </select>
+              <input
+                type="text"
+                name="newIncidentName"
+                placeholder="…or name a new incident (e.g. I-95 pileup)"
+                className="h-12 rounded-md border border-zinc-700 bg-zinc-950 px-3 text-base text-zinc-50 placeholder:text-zinc-600"
+              />
+            </div>
+
             <Button type="submit" className="h-14 text-base">
               Start transport
             </Button>
