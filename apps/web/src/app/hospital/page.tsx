@@ -34,6 +34,19 @@ export default async function HospitalBoard() {
     .eq("status", "active")
     .order("started_at", { ascending: false });
 
+  const transportIds = (transports ?? []).map((t) => t.id);
+  const { data: unacknowledged } = transportIds.length
+    ? await supabase
+        .from("alerts")
+        .select("transport_id")
+        .in("transport_id", transportIds)
+        .is("acknowledged_at", null)
+    : { data: [] };
+  const alertCounts = new Map<string, number>();
+  for (const row of unacknowledged ?? []) {
+    alertCounts.set(row.transport_id, (alertCounts.get(row.transport_id) ?? 0) + 1);
+  }
+
   return (
     <div className="flex flex-1 flex-col gap-6 bg-zinc-50 px-8 py-10">
       <header>
@@ -56,7 +69,12 @@ export default async function HospitalBoard() {
                   <span>
                     {(t.units as { callsign: string; name: string } | null)?.callsign ?? "Unknown unit"}
                   </span>
-                  {t.acuity != null && <Badge variant="secondary">Acuity {t.acuity}</Badge>}
+                  <div className="flex items-center gap-2">
+                    {alertCounts.has(t.id) && (
+                      <Badge variant="destructive">{alertCounts.get(t.id)} alert(s)</Badge>
+                    )}
+                    {t.acuity != null && <Badge variant="secondary">Acuity {t.acuity}</Badge>}
+                  </div>
                 </CardTitle>
               </CardHeader>
               <CardContent className="text-sm text-muted-foreground">

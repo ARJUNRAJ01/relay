@@ -17,7 +17,14 @@ class FakeLLM:
 
 def make_segments(n: int) -> list[dict]:
     return [
-        {"id": f"seg-{i}", "speaker": "medic", "text": f"text {i}", "t_start": float(i), "t_end": float(i + 1)}
+        {
+            "id": f"seg-{i}",
+            "speaker": "medic",
+            "text": f"text {i}",
+            "t_start": float(i),
+            "t_end": float(i + 1),
+            "confidence": 1.0,
+        }
         for i in range(n)
     ]
 
@@ -75,8 +82,8 @@ async def test_generate_maps_indices_and_drops_unsourced_claims(monkeypatch):
     }
     monkeypatch.setattr(report_generator, "get_llm_provider", lambda: FakeLLM(llm_response))
 
-    async def fake_next_version(transport_id):
-        return 1
+    async def fake_get_latest(transport_id):
+        return None
 
     captured_report = {}
 
@@ -89,7 +96,7 @@ async def test_generate_maps_indices_and_drops_unsourced_claims(monkeypatch):
     async def fake_insert_claims(claims):
         captured_claims.extend(claims)
 
-    monkeypatch.setattr(report_generator.report_store, "next_version", fake_next_version)
+    monkeypatch.setattr(report_generator.report_store, "get_latest", fake_get_latest)
     monkeypatch.setattr(report_generator.report_store, "insert_report", fake_insert_report)
     monkeypatch.setattr(report_generator.report_store, "insert_claims", fake_insert_claims)
 
@@ -124,8 +131,8 @@ async def test_generate_clamps_out_of_range_confidence(monkeypatch):
         ),
     )
 
-    async def fake_next_version(transport_id):
-        return 1
+    async def fake_get_latest(transport_id):
+        return None
 
     async def fake_insert_report(**kwargs):
         return "report-1"
@@ -135,7 +142,7 @@ async def test_generate_clamps_out_of_range_confidence(monkeypatch):
     async def fake_insert_claims(claims):
         captured_claims.extend(claims)
 
-    monkeypatch.setattr(report_generator.report_store, "next_version", fake_next_version)
+    monkeypatch.setattr(report_generator.report_store, "get_latest", fake_get_latest)
     monkeypatch.setattr(report_generator.report_store, "insert_report", fake_insert_report)
     monkeypatch.setattr(report_generator.report_store, "insert_claims", fake_insert_claims)
 

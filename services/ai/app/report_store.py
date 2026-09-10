@@ -8,20 +8,22 @@ from app.db import get_client
 logger = logging.getLogger("relay.report_store")
 
 
-async def next_version(transport_id: str) -> int:
-    def _select() -> int:
+async def get_latest(transport_id: str) -> dict | None:
+    """The most recent report version, if any — used both to compute the
+    next version number and (by app/alerts.py) as the "before" side of a
+    deterioration comparison against the report being generated now."""
+
+    def _select() -> dict | None:
         result = (
             get_client()
             .table("reports")
-            .select("version")
+            .select("version, soap")
             .eq("transport_id", transport_id)
             .order("version", desc=True)
             .limit(1)
             .execute()
         )
-        if not result.data:
-            return 1
-        return result.data[0]["version"] + 1
+        return result.data[0] if result.data else None
 
     return await asyncio.to_thread(_select)
 

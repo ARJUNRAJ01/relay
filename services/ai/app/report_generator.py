@@ -18,13 +18,18 @@ model's own self-assessment of how directly the transcript supports that
 specific field. LLM self-reported confidence is well known to be poorly
 calibrated — treat this the same way as the ASR placeholder confidence in
 app/asr/cartesia.py: fine for display, not yet a number alert-gating logic
-(phase 5) should trust without further work.
+should trust without further work.
+
+`protocol_matches` (STEMI / stroke / sepsis / major trauma) feeds phase 5's
+protocol-match alert — see app/alerts.py, which also derives deterioration
+and contraindication alerts from this same extraction rather than a
+separate LLM call.
 """
 
 import asyncio
 import logging
 
-from app import report_store, transcript_store
+from app import alerts, report_store, transcript_store
 from app.llm.base import get_llm_provider
 
 logger = logging.getLogger("relay.report_generator")
@@ -59,6 +64,13 @@ no basis for it, rather than guessing):
   "allergies": [ "string" ],
   "predicted_resources": [ "string, e.g. 'Trauma bay', 'Cardiology on call', 'CT'" ],
   "triage_acuity": { "score": 1-5, "reasoning": "string" },
+  "protocol_matches": [
+    {
+      "protocol": "stemi|stroke|sepsis|major_trauma",
+      "reasoning": "string — the specific findings that suggest this",
+      "source_segment_indices": [int, ...]
+    }
+  ],
   "claims": [
     {
       "field": "dotted path, e.g. 'chief_complaint', 'soap.subjective', 'vitals[0]', 'medications[0]', 'triage_acuity'",
@@ -117,7 +129,8 @@ async def _generate(transport_id: str) -> None:
         return
 
     claims_raw = extracted.pop("claims", [])
-    version = await report_store.next_version(transport_id)
+    previous = await report_store.get_latest(transport_id)
+    version = (previous["version"] + 1) if previous else 1
     fhir_payload = _build_fhir_bundle(extracted)
     report_id = await report_store.insert_report(
         transport_id=transport_id, version=version, soap=extracted, fhir_payload=fhir_payload
@@ -140,6 +153,16 @@ async def _generate(transport_id: str) -> None:
         )
     await report_store.insert_claims(claims)
     logger.info("report v%d generated for transport %s (%d claims)", version, transport_id, len(claims))
+
+    try:
+        await alerts.evaluate_and_fire(
+            transport_id=transport_id,
+            segments=segments,
+            current=extracted,
+            previous=previous["soap"] if previous else None,
+        )
+    except Exception:
+        logger.exception("alert evaluation failed for transport %s", transport_id)
 
 
 def _build_fhir_bundle(extracted: dict) -> dict:

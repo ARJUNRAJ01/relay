@@ -7,7 +7,7 @@ crew clears the bay faster for the next call.
 
 See [REGULATORY.md](./REGULATORY.md) for the FDA/SaMD posture this pilot is built around.
 
-## Status: Phase 4 — Report
+## Status: Phase 5 — Alerts
 
 - [x] Monorepo layout (`apps/web`, `services/ai`, `supabase/`)
 - [x] Supabase project, schema, and RLS (`supabase/migrations/`)
@@ -22,7 +22,10 @@ See [REGULATORY.md](./REGULATORY.md) for the FDA/SaMD posture this pilot is buil
       transcript, every field traceable to its source segment(s), on the
       hospital's split SOAP/transcript view with click-to-source scroll
       linking — Phase 4
-- [ ] Alerts — Phase 5
+- [x] Alerts: protocol match (STEMI/stroke/sepsis/major trauma),
+      deterioration, and contraindication detection, each confidence-gated
+      against its source transcript spans, with paging (stubbed — see
+      below) and a top-anchored acknowledgment banner capped at 3 — Phase 5
 - [ ] Offline queue — Phase 6
 - [ ] MCI mode — Phase 7
 - [ ] Polish / accessibility / load test — Phase 8
@@ -71,6 +74,30 @@ docstrings in `services/ai/app/asr/cartesia.py` for detail):
 - The medic's one-tap reject/override flow (`report_claims.human_override`)
   has a column for it but no UI yet — not built in this pass.
 
+**Phase 5 gaps, flagged rather than hidden** (see the module docstring in
+`services/ai/app/alerts.py`):
+- **Paging is stubbed.** Twilio needs a real account + a way to verify an
+  SMS actually lands somewhere, neither practical from this dev
+  environment. Every alert logs `PAGING STUB (Twilio not configured) —
+  would page <number>: <message>` instead of calling Twilio. Filling in
+  `TWILIO_ACCOUNT_SID` / `TWILIO_AUTH_TOKEN` / `TWILIO_FROM_NUMBER` in
+  `services/ai/.env` is the only change needed to send real SMS — see
+  `services/ai/app/paging.py`.
+- **Deterioration thresholds are crude placeholders** (fixed HR/SBP/SpO2
+  cutoffs and deltas between two report versions), not a validated
+  clinical deterioration index like NEWS2 or shock index.
+- **Contraindication checking is plain substring matching** between
+  reported medications and reported allergies — it has no drug-class or
+  cross-reactivity knowledge. A real implementation needs a drug/allergy
+  ontology (e.g. RxNorm).
+- One paging number per hospital (`hospitals.on_call_phone`), not
+  per-team/per-protocol routing (a real system pages cath lab for STEMI,
+  neuro for stroke, etc.).
+- Alert confidence-gating (`MIN_ALERT_CONFIDENCE` in `alerts.py`) is real
+  logic and covered by tests, but is a no-op in practice today since every
+  ASR segment reports the same placeholder confidence (see the phase 3 gap
+  above) — it'll start doing something the moment that's fixed.
+
 ## Layout
 
 ```
@@ -117,7 +144,8 @@ uvicorn app.main:app --reload --port 8000
 
 Copy `services/ai/.env.example` to `services/ai/.env` and fill in values,
 including a Cartesia API key (https://play.cartesia.ai) and a DeepSeek API
-key (https://platform.deepseek.com).
+key (https://platform.deepseek.com). Twilio vars can stay blank — paging
+falls back to a log line until they're set (see the phase 5 gaps above).
 
 Run tests with `.venv/Scripts/python.exe -m pytest` (or `pytest` once the
 venv is activated).
@@ -143,7 +171,13 @@ venv is activated).
    new report version from the whole transcript so far and writes
    `reports` + `report_claims`. A hospital_staff user can **Sign report**
    once they've reviewed it, which clears the "UNVERIFIED — EN ROUTE" badge.
-6. Raw audio also lands at `services/ai/recordings/<transport_id>/<identity>.wav`.
+6. The same extraction also feeds `app/alerts.py`: a protocol match, a
+   deterioration finding, or a contraindication each write an `alerts` row
+   and log a page (or send one for real, once Twilio is configured). Any
+   unacknowledged alert shows as a top-anchored banner (capped at 3) on
+   `/hospital/<id>` and as a count badge on the `/hospital` board;
+   **Acknowledge** clears it.
+7. Raw audio also lands at `services/ai/recordings/<transport_id>/<identity>.wav`.
 
 A real phone won't have this microphone problem, but the browser sandbox
 used to smoke test this build has none and denies `getUserMedia`, so the
