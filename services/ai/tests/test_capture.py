@@ -39,7 +39,11 @@ def make_recorder(tmp_path, monkeypatch):
     async def fake_insert_segment(**kwargs):
         return None
 
+    async def fake_request_regeneration(transport_id):
+        return None
+
     monkeypatch.setattr(capture.transcript_store, "insert_segment", fake_insert_segment)
+    monkeypatch.setattr(capture.report_generator, "request_regeneration", fake_request_regeneration)
     return capture.RoomRecorder(transport_id="tx-1", room_name="room-1")
 
 

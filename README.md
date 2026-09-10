@@ -7,7 +7,7 @@ crew clears the bay faster for the next call.
 
 See [REGULATORY.md](./REGULATORY.md) for the FDA/SaMD posture this pilot is built around.
 
-## Status: Phase 3 — Transcript
+## Status: Phase 4 — Report
 
 - [x] Monorepo layout (`apps/web`, `services/ai`, `supabase/`)
 - [x] Supabase project, schema, and RLS (`supabase/migrations/`)
@@ -17,7 +17,11 @@ See [REGULATORY.md](./REGULATORY.md) for the FDA/SaMD posture this pilot is buil
       audio lands on the AI service, raw audio persists to disk — Phase 2
 - [x] Transcript: Cartesia streaming STT, live transcript on the medic
       screen and the hospital screen via Supabase Realtime — Phase 3
-- [ ] Live SOAP report — Phase 4
+- [x] Report: DeepSeek pipeline extracting a live SOAP note, vitals,
+      medications, triage acuity, and predicted resources from the rolling
+      transcript, every field traceable to its source segment(s), on the
+      hospital's split SOAP/transcript view with click-to-source scroll
+      linking — Phase 4
 - [ ] Alerts — Phase 5
 - [ ] Offline queue — Phase 6
 - [ ] MCI mode — Phase 7
@@ -49,6 +53,23 @@ docstrings in `services/ai/app/asr/cartesia.py` for detail):
   on our end — see `supabase/migrations/0006_*` and `0007_*`) and never
   recovered even after the underlying bug was fixed; Broadcast is also
   Supabase's current recommended approach and doesn't depend on that poller.
+  Reports/report_claims (phase 4) use the same pattern (`0008_*`).
+
+**Phase 4 gaps, flagged rather than hidden** (see the module docstring in
+`services/ai/app/report_generator.py`):
+- Each claim's `confidence` is the LLM's own self-assessment of how
+  directly the transcript supports that field — not calibrated, same
+  caveat as the ASR placeholder confidence above.
+- The model only documents medications/procedures/vitals actually stated
+  as given — it never proposes a new one. Triage acuity is the one
+  genuinely predictive field; the UI labels it "AI-suggested — confirm
+  before acting" and ships its reasoning alongside the score.
+- A claim the model can't tie to a real transcript segment index is
+  **dropped**, not stored as if it were sourced — traceability is
+  enforced server-side, not just a UI convention (see
+  `services/ai/tests/test_report_generator.py`).
+- The medic's one-tap reject/override flow (`report_claims.human_override`)
+  has a column for it but no UI yet — not built in this pass.
 
 ## Layout
 
@@ -95,7 +116,8 @@ uvicorn app.main:app --reload --port 8000
 ```
 
 Copy `services/ai/.env.example` to `services/ai/.env` and fill in values,
-including a Cartesia API key from https://play.cartesia.ai.
+including a Cartesia API key (https://play.cartesia.ai) and a DeepSeek API
+key (https://platform.deepseek.com).
 
 Run tests with `.venv/Scripts/python.exe -m pytest` (or `pytest` once the
 venv is activated).
@@ -111,10 +133,17 @@ venv is activated).
    the web server action) to join the same room as a silent recorder
    participant, subscribe to that audio, stream it to Cartesia, and write
    finalized transcript chunks to `transcript_segments`.
-4. Both `/medic/<id>` (dark, mobile) and `/hospital/<id>` (light, desktop —
-   needs a `profiles` row with `role='hospital_staff'` and a `hospital_id`)
-   show the transcript updating live as it's spoken.
-5. Raw audio also lands at `services/ai/recordings/<transport_id>/<identity>.wav`.
+4. `/medic/<id>` (dark, mobile) shows the transcript updating live as it's
+   spoken. `/hospital/<id>` (light, desktop — needs a `profiles` row with
+   `role='hospital_staff'` and a `hospital_id`) shows a split view: the
+   live SOAP report on the left, the transcript on the right. Every
+   report field is clickable — it scrolls to and highlights the exact
+   transcript line(s) it came from.
+5. After each finalized transcript segment, the AI service re-extracts a
+   new report version from the whole transcript so far and writes
+   `reports` + `report_claims`. A hospital_staff user can **Sign report**
+   once they've reviewed it, which clears the "UNVERIFIED — EN ROUTE" badge.
+6. Raw audio also lands at `services/ai/recordings/<transport_id>/<identity>.wav`.
 
 A real phone won't have this microphone problem, but the browser sandbox
 used to smoke test this build has none and denies `getUserMedia`, so the

@@ -23,7 +23,7 @@ from dataclasses import dataclass, field
 
 from livekit import api, rtc
 
-from app import transcript_store
+from app import report_generator, transcript_store
 from app.asr.base import ASRSession, TranscriptChunk, create_asr_session
 from app.settings import settings
 
@@ -151,6 +151,7 @@ class RoomRecorder:
             t_start=t_start,
             t_end=t_end,
         )
+        await report_generator.request_regeneration(self.transport_id)
 
     async def _finalize(self, identity: str) -> None:
         self._finalized.add(identity)

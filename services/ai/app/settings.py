@@ -26,11 +26,12 @@ class Settings(BaseSettings):
     asr_provider: str = Field(default="cartesia", alias="ASR_PROVIDER")
     cartesia_api_key: str = Field(alias="CARTESIA_API_KEY")
 
+    # --- Phase 4: required now ---
+    llm_provider: str = Field(default="deepseek", alias="LLM_PROVIDER")
+    deepseek_api_key: str = Field(alias="DEEPSEEK_API_KEY")
+
     # --- Later phases: optional until that phase is built ---
     deepgram_api_key: str | None = Field(default=None, alias="DEEPGRAM_API_KEY")
-
-    llm_provider: str = Field(default="deepseek", alias="LLM_PROVIDER")
-    deepseek_api_key: str | None = Field(default=None, alias="DEEPSEEK_API_KEY")
     anthropic_api_key: str | None = Field(default=None, alias="ANTHROPIC_API_KEY")
 
     upstash_redis_rest_url: str | None = Field(default=None, alias="UPSTASH_REDIS_REST_URL")

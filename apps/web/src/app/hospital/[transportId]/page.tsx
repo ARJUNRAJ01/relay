@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { LiveTranscript } from "@/components/live-transcript";
+import { HospitalSplitView } from "@/components/hospital-split-view";
 
 export default async function HospitalTransportPage({
   params,
@@ -35,12 +35,7 @@ export default async function HospitalTransportPage({
         <h1 className="text-2xl font-semibold">{unit?.callsign ?? "Unknown unit"}</h1>
       </header>
 
-      <div className="flex-1 rounded-2xl border bg-white p-6 shadow-sm">
-        <h2 className="mb-4 text-sm font-medium uppercase tracking-wide text-muted-foreground">
-          Live transcript — UNVERIFIED, EN ROUTE
-        </h2>
-        <LiveTranscript transportId={transport.id} />
-      </div>
+      <HospitalSplitView transportId={transport.id} />
     </div>
   );
 }
