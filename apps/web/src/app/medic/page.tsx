@@ -21,8 +21,8 @@ export default async function MedicHome() {
 
   if (!profile || profile.role !== "medic") {
     return (
-      <div className="flex flex-1 items-center justify-center bg-zinc-950 px-4">
-        <p className="text-zinc-400">This screen is for medic accounts only.</p>
+      <div className="dark flex flex-1 items-center justify-center bg-background px-4">
+        <p className="text-muted-foreground">This screen is for medic accounts only.</p>
       </div>
     );
   }
@@ -35,11 +35,11 @@ export default async function MedicHome() {
     .order("opened_at", { ascending: false });
 
   return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-6 bg-zinc-950 px-4 py-16 text-zinc-50">
-      <Card className="w-full max-w-sm border-zinc-800 bg-zinc-900 text-zinc-50">
+    <div className="dark flex flex-1 flex-col items-center justify-center gap-6 bg-background px-4 py-16 text-foreground">
+      <Card className="w-full max-w-sm border-border bg-card text-card-foreground">
         <CardHeader>
           <CardTitle>Start transport</CardTitle>
-          <CardDescription className="text-zinc-400">
+          <CardDescription className="text-muted-foreground">
             {profile.units ? (
               <>
                 {(profile.units as { callsign: string; name: string }).callsign} —{" "}
@@ -53,14 +53,14 @@ export default async function MedicHome() {
         <CardContent>
           <form action={startTransport} className="flex flex-col gap-4">
             <div className="flex flex-col gap-2">
-              <label htmlFor="hospitalId" className="text-sm text-zinc-400">
+              <label htmlFor="hospitalId" className="text-sm text-muted-foreground">
                 Receiving hospital
               </label>
               <select
                 id="hospitalId"
                 name="hospitalId"
                 required
-                className="h-12 rounded-md border border-zinc-700 bg-zinc-950 px-3 text-base text-zinc-50"
+                className="h-14 rounded-md border border-input bg-background px-3 text-base text-foreground"
               >
                 {(hospitals ?? []).map((h) => (
                   <option key={h.id} value={h.id}>
@@ -70,15 +70,15 @@ export default async function MedicHome() {
               </select>
             </div>
 
-            <div className="flex flex-col gap-2 border-t border-zinc-800 pt-4">
-              <label htmlFor="incidentId" className="text-sm text-zinc-400">
+            <div className="flex flex-col gap-2 border-t border-border pt-4">
+              <label htmlFor="incidentId" className="text-sm text-muted-foreground">
                 Mass casualty incident (optional)
               </label>
               <select
                 id="incidentId"
                 name="incidentId"
                 defaultValue=""
-                className="h-12 rounded-md border border-zinc-700 bg-zinc-950 px-3 text-base text-zinc-50"
+                className="h-14 rounded-md border border-input bg-background px-3 text-base text-foreground"
               >
                 <option value="">Not part of an incident</option>
                 {(openIncidents ?? []).map((i) => (
@@ -91,7 +91,7 @@ export default async function MedicHome() {
                 type="text"
                 name="newIncidentName"
                 placeholder="…or name a new incident (e.g. I-95 pileup)"
-                className="h-12 rounded-md border border-zinc-700 bg-zinc-950 px-3 text-base text-zinc-50 placeholder:text-zinc-600"
+                className="h-14 rounded-md border border-input bg-background px-3 text-base text-foreground placeholder:text-muted-foreground"
               />
             </div>
 

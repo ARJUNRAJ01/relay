@@ -34,7 +34,7 @@ export default async function HospitalBoard() {
 
   if (!profile || profile.role !== "hospital_staff" || !profile.hospital_id) {
     return (
-      <div className="flex flex-1 items-center justify-center bg-zinc-50 px-4">
+      <div className="flex flex-1 items-center justify-center bg-background px-4">
         <p className="text-muted-foreground">This screen is for hospital staff accounts only.</p>
       </div>
     );
@@ -94,7 +94,7 @@ export default async function HospitalBoard() {
   const sortedStandalone = [...standalone].sort(bySeverity);
 
   return (
-    <div className="flex flex-1 flex-col gap-6 bg-zinc-50 px-8 py-10">
+    <div className="flex flex-1 flex-col gap-6 bg-background px-8 py-10">
       <header>
         <span className="text-sm text-muted-foreground">Incoming board</span>
         <h1 className="text-2xl font-semibold">
@@ -105,11 +105,11 @@ export default async function HospitalBoard() {
       {transports.length === 0 && <p className="text-sm text-muted-foreground">No active transports right now.</p>}
 
       {sortedIncidents.map((group) => (
-        <details key={group.incidentId} className="rounded-2xl border border-red-200 bg-red-50">
+        <details key={group.incidentId} className="rounded-2xl border border-destructive/30 bg-destructive/5">
           <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4">
             <div className="flex items-center gap-3">
-              <span className="text-xs font-semibold uppercase tracking-wide text-red-700">Incident</span>
-              <span className="text-base font-semibold text-red-950">{group.name}</span>
+              <span className="text-xs font-semibold uppercase tracking-wide text-destructive">Incident</span>
+              <span className="text-base font-semibold text-foreground">{group.name}</span>
               <Badge variant="secondary">{group.transports.length} unit(s)</Badge>
             </div>
             <div className="flex items-center gap-2">

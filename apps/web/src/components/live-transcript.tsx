@@ -23,11 +23,9 @@ const LOW_CONFIDENCE_THRESHOLD = 0.5;
 
 export function LiveTranscript({
   transportId,
-  dark = false,
   highlightedSegmentIds,
 }: {
   transportId: string;
-  dark?: boolean;
   /** Set by the sibling SOAP report when a claim is clicked, so the reader
    * can jump straight to the words that produced it — see the hospital
    * transport page, which owns this state and passes it to both panels. */
@@ -82,10 +80,8 @@ export function LiveTranscript({
     });
   }, [highlightedSegmentIds]);
 
-  const emptyText = dark ? "text-zinc-500" : "text-muted-foreground";
-
   if (segments.length === 0) {
-    return <p className={`text-sm ${emptyText}`}>Waiting for transcript…</p>;
+    return <p className="text-sm text-muted-foreground">Waiting for transcript…</p>;
   }
 
   return (
@@ -94,7 +90,6 @@ export function LiveTranscript({
         <TranscriptLine
           key={segment.id}
           segment={segment}
-          dark={dark}
           highlighted={highlightedSegmentIds?.includes(segment.id) ?? false}
         />
       ))}
@@ -103,27 +98,14 @@ export function LiveTranscript({
   );
 }
 
-function TranscriptLine({
-  segment,
-  dark,
-  highlighted,
-}: {
-  segment: Segment;
-  dark: boolean;
-  highlighted: boolean;
-}) {
+function TranscriptLine({ segment, highlighted }: { segment: Segment; highlighted: boolean }) {
   const lowConfidence = segment.confidence < LOW_CONFIDENCE_THRESHOLD;
-  const labelColor = dark ? "text-zinc-500" : "text-muted-foreground";
-  const textColor = lowConfidence ? "text-amber-500" : dark ? "text-zinc-100" : "text-foreground";
-  const highlightClass = highlighted
-    ? dark
-      ? "bg-emerald-500/20 -mx-2 rounded-md px-2 py-1"
-      : "bg-emerald-100 -mx-2 rounded-md px-2 py-1"
-    : "";
+  const textColor = lowConfidence ? "text-warning-text" : "text-foreground";
+  const highlightClass = highlighted ? "bg-success/15 -mx-2 rounded-md px-2 py-1" : "";
 
   return (
     <div id={`segment-${segment.id}`} className={`flex flex-col gap-0.5 transition-colors ${highlightClass}`}>
-      <span className={`text-xs uppercase tracking-wide ${labelColor}`}>
+      <span className="text-xs uppercase tracking-wide text-muted-foreground">
         {SPEAKER_LABEL[segment.speaker] ?? segment.speaker}
         {lowConfidence && " · low confidence"}
       </span>

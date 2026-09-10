@@ -132,7 +132,10 @@ export function LiveReport({
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
-        <Badge variant={report.signed_by ? "default" : "secondary"}>
+        <Badge
+          variant="outline"
+          className={report.signed_by ? "border-success/30 bg-success/10 text-success-text" : "border-warning/30 bg-warning/10 text-warning-text"}
+        >
           {report.signed_by ? "Signed" : "UNVERIFIED — EN ROUTE"}
         </Badge>
         {!report.signed_by && (
@@ -279,7 +282,7 @@ function ClaimSource({
       type="button"
       disabled={!claim}
       onClick={() => claim && onSourceClick?.(claim.source_segment_ids)}
-      className={`text-left ${claim ? "cursor-pointer underline decoration-dotted underline-offset-2 hover:decoration-solid" : ""} ${low ? "text-amber-600" : ""}`}
+      className={`text-left ${claim ? "cursor-pointer underline decoration-dotted underline-offset-2 hover:decoration-solid" : ""} ${low ? "text-warning-text" : ""}`}
       title={claim ? `Confidence: ${(claim.confidence * 100).toFixed(0)}% — click to view source` : undefined}
     >
       {children}

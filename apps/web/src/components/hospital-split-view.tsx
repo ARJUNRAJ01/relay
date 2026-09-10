@@ -13,14 +13,14 @@ export function HospitalSplitView({ transportId }: { transportId: string }) {
       <LiveAlerts transportId={transportId} />
 
       <div className="grid flex-1 grid-cols-1 gap-6 lg:grid-cols-2">
-        <div className="overflow-y-auto rounded-2xl border bg-white p-6 shadow-sm">
+        <div className="overflow-y-auto rounded-2xl border border-border bg-card p-6 shadow-sm">
           <h2 className="mb-4 text-sm font-medium uppercase tracking-wide text-muted-foreground">
             SOAP report
           </h2>
           <LiveReport transportId={transportId} onSourceClick={setHighlightedSegmentIds} />
         </div>
 
-        <div className="overflow-y-auto rounded-2xl border bg-white p-6 shadow-sm">
+        <div className="overflow-y-auto rounded-2xl border border-border bg-card p-6 shadow-sm">
           <h2 className="mb-4 text-sm font-medium uppercase tracking-wide text-muted-foreground">
             Live transcript
           </h2>

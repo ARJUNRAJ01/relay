@@ -82,18 +82,18 @@ export function LiveAlerts({ transportId }: { transportId: string }) {
       {visible.map((alert) => (
         <div
           key={alert.id}
-          className="flex items-center justify-between gap-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 shadow-sm"
+          className="flex items-center justify-between gap-4 rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 shadow-sm"
         >
           <div className="flex min-w-0 flex-col gap-0.5">
-            <span className="text-xs font-semibold uppercase tracking-wide text-red-700">
+            <span className="text-xs font-semibold uppercase tracking-wide text-destructive-text">
               {KIND_LABEL[alert.kind] ?? alert.kind}
             </span>
-            <span className="break-words text-sm text-red-900">{describeAlert(alert)}</span>
+            <span className="break-words text-sm text-foreground">{describeAlert(alert)}</span>
           </div>
           <Button
             size="sm"
             variant="destructive"
-            className="shrink-0"
+            className="h-10 shrink-0 px-4"
             onClick={() => acknowledge(alert.id)}
           >
             Acknowledge
@@ -101,7 +101,7 @@ export function LiveAlerts({ transportId }: { transportId: string }) {
         </div>
       ))}
       {overflow > 0 && (
-        <p className="text-center text-xs text-red-700">+{overflow} more unacknowledged alert(s)</p>
+        <p className="text-center text-xs text-destructive-text">+{overflow} more unacknowledged alert(s)</p>
       )}
     </div>
   );

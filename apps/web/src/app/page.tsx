@@ -21,7 +21,7 @@ export default async function Home() {
     .maybeSingle();
 
   return (
-    <div className="flex flex-1 items-center justify-center bg-zinc-50 px-4 dark:bg-black">
+    <div className="flex flex-1 items-center justify-center bg-background px-4">
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Relay</CardTitle>

@@ -32,7 +32,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex flex-1 items-center justify-center bg-zinc-50 px-4 dark:bg-black">
+    <div className="flex flex-1 items-center justify-center bg-background px-4">
       <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle>Sign in to Relay</CardTitle>
@@ -59,7 +59,7 @@ export default function LoginPage() {
                   placeholder="you@example.org"
                 />
               </div>
-              <Button type="submit" disabled={loading} className="h-12">
+              <Button type="submit" disabled={loading} className="h-14">
                 {loading ? "Sending…" : "Send sign-in link"}
               </Button>
             </form>

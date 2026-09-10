@@ -32,7 +32,7 @@ export default async function HospitalTransportPage({
   const incident = transport.incidents as { name: string } | null;
 
   return (
-    <div className="flex flex-1 flex-col gap-6 bg-zinc-50 px-8 py-10">
+    <div className="flex flex-1 flex-col gap-6 bg-background px-8 py-10">
       <header className="flex flex-col gap-1">
         <span className="text-sm text-muted-foreground">Incoming from</span>
         <div className="flex items-center gap-3">

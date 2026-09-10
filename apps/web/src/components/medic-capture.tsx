@@ -162,16 +162,16 @@ export function MedicCapture({
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-zinc-950 text-zinc-50">
+    <div className="dark flex min-h-screen flex-col bg-background text-foreground">
       <header className="flex flex-col gap-1 px-6 pb-4 pt-8">
-        <span className="text-sm text-zinc-500">En route to</span>
+        <span className="text-sm text-muted-foreground">En route to</span>
         <h1 className="text-2xl font-semibold">{hospitalName}</h1>
       </header>
 
       <main className="flex flex-1 flex-col items-center gap-6 px-6 pt-4">
         <StatusBadge status={status} />
         <Waveform level={level} active={status === "connected"} />
-        <p className="text-center text-sm text-zinc-500">
+        <p className="text-center text-sm text-muted-foreground">
           {status === "connected"
             ? "Capturing audio. This device stays awake for the run."
             : status === "connecting"
@@ -182,9 +182,9 @@ export function MedicCapture({
         </p>
 
         {offlineStatus !== "live" && (
-          <div className="flex w-full items-center gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-2">
-            <span className="h-2 w-2 shrink-0 animate-pulse rounded-full bg-amber-400" />
-            <span className="text-sm text-amber-300">
+          <div className="flex w-full items-center gap-2 rounded-xl border border-warning/40 bg-warning/10 px-4 py-2">
+            <span className="h-2 w-2 shrink-0 animate-pulse rounded-full bg-warning" />
+            <span className="text-sm text-warning-text">
               {offlineStatus === "recording-locally"
                 ? "No connection — recording on this device. Nothing is lost."
                 : "Reconnected — syncing audio recorded while offline…"}
@@ -192,9 +192,9 @@ export function MedicCapture({
           </div>
         )}
 
-        <div className="flex w-full flex-1 flex-col gap-2 overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 p-4">
-          <span className="text-xs uppercase tracking-wide text-zinc-500">Live transcript</span>
-          <LiveTranscript transportId={transportId} dark />
+        <div className="flex w-full flex-1 flex-col gap-2 overflow-hidden rounded-2xl border border-border bg-card p-4">
+          <span className="text-xs uppercase tracking-wide text-muted-foreground">Live transcript</span>
+          <LiveTranscript transportId={transportId} />
         </div>
       </main>
 
@@ -202,7 +202,7 @@ export function MedicCapture({
         <Button
           onClick={handleEnd}
           variant="destructive"
-          className="h-16 w-full text-lg font-semibold"
+          className="h-16 min-h-14 w-full text-lg font-semibold"
         >
           End transport
         </Button>
@@ -213,15 +213,11 @@ export function MedicCapture({
 
 function StatusBadge({ status }: { status: Status }) {
   const color =
-    status === "connected"
-      ? "bg-emerald-500"
-      : status === "connecting"
-        ? "bg-amber-500"
-        : "bg-red-500";
+    status === "connected" ? "bg-success" : status === "connecting" ? "bg-warning" : "bg-destructive";
   return (
     <div className="flex items-center gap-2">
       <span className={`h-3 w-3 rounded-full ${color}`} />
-      <span className="text-sm uppercase tracking-wide text-zinc-400">{status}</span>
+      <span className="text-sm uppercase tracking-wide text-muted-foreground">{status}</span>
     </div>
   );
 }
@@ -238,7 +234,7 @@ function Waveform({ level, active }: { level: number; active: boolean }) {
         return (
           <div
             key={i}
-            className="w-2 rounded-full bg-emerald-400 transition-all duration-150"
+            className="w-2 rounded-full bg-success transition-all duration-150"
             style={{ height: `${amplitude * 100}%` }}
           />
         );

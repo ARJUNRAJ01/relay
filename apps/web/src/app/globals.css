@@ -7,6 +7,13 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-success-text: var(--success-text);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-warning-text: var(--warning-text);
+  --color-destructive-text: var(--destructive-text);
   --font-sans: var(--font-sans);
   --font-mono: var(--font-geist-mono);
   --font-heading: var(--font-sans);
@@ -48,73 +55,114 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+/*
+ * Relay design tokens (phase 8). Five named colors, color reserved for
+ * meaning only: Ink and Mist do all the structural/neutral work; Stable
+ * Green, Caution Amber, and Alert Red are the *only* chromatic colors in
+ * the product, and each means exactly one thing everywhere it appears.
+ *
+ * Ink    #111827 — light-theme text / dark-theme background
+ * Mist   #F6F7F9 — light-theme background / dark-theme text
+ * Stable Green  #12B76A (light) / #32D583 (dark) — connected, live, signed
+ * Caution Amber #F79009 (light) / #FDB022 (dark) — offline, low-confidence
+ * Alert Red     #D92D20 (light) / #F04438 (dark) — critical, destructive
+ *
+ * The hospital dashboard is hardcoded light and the medic app hardcoded
+ * dark — not system-theme-driven. A charge nurse's desktop and a medic's
+ * phone at 3am are different environments with different defaults; this
+ * pins each surface to the one that's actually right for it, per the
+ * product spec ("dark theme first for the medic app... night transports
+ * are most of the job").
+ */
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --background: #f6f7f9;
+  --foreground: #111827;
+  --card: #ffffff;
+  --card-foreground: #111827;
+  --popover: #ffffff;
+  --popover-foreground: #111827;
+  --primary: #111827;
+  --primary-foreground: #f6f7f9;
+  --secondary: #eef0f3;
+  --secondary-foreground: #111827;
+  --muted: #eef0f3;
+  --muted-foreground: #6b7280;
+  --accent: #eef0f3;
+  --accent-foreground: #111827;
+  --destructive: #d92d20;
+  --destructive-text: #912018;
+  /* ↑ text-on-Mist variant: base destructive is only 4.5:1 against Mist
+     (AA, not AAA) — used for fills/borders/dots, never for body text. */
+  --success: #12b76a;
+  --success-foreground: #ffffff;
+  --success-text: #04502f;
+  /* ↑ base success is only 2.45:1 against Mist — nowhere near AA, let
+     alone AAA — so text usage always goes through this darker variant. */
+  --warning: #f79009;
+  --warning-foreground: #111827;
+  --warning-text: #7a2e0e;
+  /* ↑ base warning is only 2.19:1 against Mist, same story as success. */
+  --border: #e5e7eb;
+  --input: #e5e7eb;
+  --ring: #111827;
+  --chart-1: #111827;
+  --chart-2: #6b7280;
+  --chart-3: #12b76a;
+  --chart-4: #f79009;
+  --chart-5: #d92d20;
+  --radius: 0.75rem;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #111827;
+  --sidebar-primary: #111827;
+  --sidebar-primary-foreground: #f6f7f9;
+  --sidebar-accent: #eef0f3;
+  --sidebar-accent-foreground: #111827;
+  --sidebar-border: #e5e7eb;
+  --sidebar-ring: #111827;
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --background: #111827;
+  --foreground: #f3f4f6;
+  --card: #1a2333;
+  --card-foreground: #f3f4f6;
+  --popover: #1a2333;
+  --popover-foreground: #f3f4f6;
+  --primary: #f3f4f6;
+  --primary-foreground: #111827;
+  --secondary: #1f2937;
+  --secondary-foreground: #f3f4f6;
+  --muted: #1f2937;
+  --muted-foreground: #9ca3af;
+  --accent: #1f2937;
+  --accent-foreground: #f3f4f6;
+  --destructive: #f04438;
+  --destructive-text: #fda29b;
+  /* ↑ base destructive is 4.72:1 against Ink (AA, not AAA) — this lighter
+     tint clears AAA (9.1:1) for text; success/warning's base hexes already
+     clear AAA against Ink as-is, so they don't need a separate variant. */
+  --success: #32d583;
+  --success-foreground: #052e1f;
+  --success-text: #32d583;
+  --warning: #fdb022;
+  --warning-foreground: #111827;
+  --warning-text: #fdb022;
+  --border: rgba(255, 255, 255, 0.08);
+  --input: rgba(255, 255, 255, 0.12);
+  --ring: #9ca3af;
+  --chart-1: #f3f4f6;
+  --chart-2: #9ca3af;
+  --chart-3: #32d583;
+  --chart-4: #fdb022;
+  --chart-5: #f04438;
+  --sidebar: #1a2333;
+  --sidebar-foreground: #f3f4f6;
+  --sidebar-primary: #f3f4f6;
+  --sidebar-primary-foreground: #111827;
+  --sidebar-accent: #1f2937;
+  --sidebar-accent-foreground: #f3f4f6;
+  --sidebar-border: rgba(255, 255, 255, 0.08);
+  --sidebar-ring: #9ca3af;
 }
 
 @layer base {
