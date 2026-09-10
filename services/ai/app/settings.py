@@ -14,6 +14,14 @@ class Settings(BaseSettings):
     supabase_service_role_key: str = Field(alias="SUPABASE_SERVICE_ROLE_KEY")
     ai_service_shared_secret: str = Field(alias="AI_SERVICE_SHARED_SECRET")
 
+    # --- Phase 2: required now ---
+    livekit_url: str = Field(alias="LIVEKIT_URL")
+    livekit_api_key: str = Field(alias="LIVEKIT_API_KEY")
+    livekit_api_secret: str = Field(alias="LIVEKIT_API_SECRET")
+
+    audio_storage_backend: str = Field(default="local", alias="AUDIO_STORAGE_BACKEND")
+    audio_storage_dir: str = Field(default="./recordings", alias="AUDIO_STORAGE_DIR")
+
     # --- Later phases: optional until that phase is built ---
     asr_provider: str = Field(default="cartesia", alias="ASR_PROVIDER")
     cartesia_api_key: str | None = Field(default=None, alias="CARTESIA_API_KEY")
@@ -22,10 +30,6 @@ class Settings(BaseSettings):
     llm_provider: str = Field(default="deepseek", alias="LLM_PROVIDER")
     deepseek_api_key: str | None = Field(default=None, alias="DEEPSEEK_API_KEY")
     anthropic_api_key: str | None = Field(default=None, alias="ANTHROPIC_API_KEY")
-
-    livekit_url: str | None = Field(default=None, alias="LIVEKIT_URL")
-    livekit_api_key: str | None = Field(default=None, alias="LIVEKIT_API_KEY")
-    livekit_api_secret: str | None = Field(default=None, alias="LIVEKIT_API_SECRET")
 
     upstash_redis_rest_url: str | None = Field(default=None, alias="UPSTASH_REDIS_REST_URL")
     upstash_redis_rest_token: str | None = Field(default=None, alias="UPSTASH_REDIS_REST_TOKEN")

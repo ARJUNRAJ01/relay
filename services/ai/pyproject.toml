@@ -8,6 +8,8 @@ dependencies = [
     "uvicorn[standard]>=0.32",
     "pydantic>=2.9",
     "pydantic-settings>=2.6",
+    "livekit-api>=0.9",
+    "livekit>=0.20",
 ]
 
 [project.optional-dependencies]
@@ -23,3 +25,6 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 include = ["app*"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"

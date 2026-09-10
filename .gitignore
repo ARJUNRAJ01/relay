@@ -32,3 +32,6 @@ build/
 # supabase local
 supabase/.branches/
 supabase/.temp/
+
+# recorded audio is PHI — never committed, local-demo storage only
+services/ai/recordings/

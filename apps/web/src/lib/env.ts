@@ -7,24 +7,23 @@ function blankToUndefined(value: unknown) {
   return value === "" ? undefined : value;
 }
 const optionalString = () => z.preprocess(blankToUndefined, z.string().min(1).optional());
-const optionalUrl = () => z.preprocess(blankToUndefined, z.string().url().optional());
 
-// Phase 1 (skeleton) only needs Supabase to run. LiveKit/AI-service/paging
-// wiring lands in later phases — keep those optional here so `next dev`
-// doesn't hard-fail before those services exist, but every var Relay will
-// eventually depend on is still declared and shaped up front.
+// Phase 1+2 need Supabase and LiveKit to run. Paging/mapping/error-reporting
+// wiring lands in later phases — keep those optional so `next dev` doesn't
+// hard-fail before those services exist, but every var Relay will eventually
+// depend on is still declared and shaped up front.
 const serverSchema = z.object({
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
-  LIVEKIT_API_KEY: optionalString(),
-  LIVEKIT_API_SECRET: optionalString(),
-  AI_SERVICE_SHARED_SECRET: optionalString(),
+  LIVEKIT_API_KEY: z.string().min(1),
+  LIVEKIT_API_SECRET: z.string().min(1),
+  AI_SERVICE_SHARED_SECRET: z.string().min(1),
 });
 
 const clientSchema = z.object({
   NEXT_PUBLIC_SUPABASE_URL: z.string().url(),
   NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1),
-  NEXT_PUBLIC_LIVEKIT_URL: optionalString(),
-  NEXT_PUBLIC_AI_SERVICE_URL: optionalUrl(),
+  NEXT_PUBLIC_LIVEKIT_URL: z.string().min(1),
+  NEXT_PUBLIC_AI_SERVICE_URL: z.string().url(),
   NEXT_PUBLIC_SENTRY_DSN: optionalString(),
   NEXT_PUBLIC_MAPBOX_TOKEN: optionalString(),
 });
