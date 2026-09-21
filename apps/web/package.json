@@ -37,8 +37,5 @@
     "tailwindcss": "^4",
     "typescript": "^5"
   },
-  "packageManager": "pnpm@12.3.4",
-  "pnpm": {
-    "onlyBuiltDependencies": ["@sentry/cli", "unrs-resolver", "esbuild", "sharp"]
-  }
+  "packageManager": "pnpm@12.3.4"
 }
