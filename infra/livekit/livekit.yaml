@@ -1,0 +1,13 @@
+# Local-dev LiveKit server config. NOT for production — single node, no TLS,
+# no Redis, fixed dev key. Swap for LiveKit Cloud (see README) when this
+# moves off a laptop.
+port: 7880
+rtc:
+  tcp_port: 7881
+  port_range_start: 50000
+  port_range_end: 50100
+  use_external_ip: false
+  node_ip: 127.0.0.1
+
+keys:
+  devkey: gr129xpEtBwVmVWe84P7ZHs/3ZJs0ppHN09GtSpZiw8=

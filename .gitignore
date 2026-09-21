@@ -1,0 +1,37 @@
+# dependencies
+node_modules/
+.pnpm-store/
+
+# next.js
+apps/web/.next/
+apps/web/out/
+
+# python
+services/ai/.venv/
+services/ai/__pycache__/
+**/__pycache__/
+*.pyc
+*.egg-info/
+
+# env
+.env
+.env.local
+.env.*.local
+apps/web/.env.local
+services/ai/.env
+
+# build
+dist/
+build/
+
+# misc
+.DS_Store
+*.log
+.turbo/
+
+# supabase local
+supabase/.branches/
+supabase/.temp/
+
+# recorded audio is PHI — never committed, local-demo storage only
+services/ai/recordings/
