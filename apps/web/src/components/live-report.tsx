@@ -2,8 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 import type { Tables } from "@/lib/supabase/types";
 
@@ -21,25 +19,29 @@ interface Soap {
   triage_acuity?: { score: number; reasoning: string };
 }
 
-// Every LLM-produced field ships with a self-reported confidence — see the
-// module docstring in services/ai/app/report_generator.py for why that
-// number is a display aid, not yet something alert-gating logic can trust.
-const LOW_CONFIDENCE_THRESHOLD = 0.5;
+const ACUITY_COLOR: Record<number, string> = {
+  1: "bg-red-600 text-white",
+  2: "bg-orange-500 text-white",
+  3: "bg-yellow-500 text-black",
+  4: "bg-green-500 text-white",
+  5: "bg-blue-400 text-white",
+};
 
-export function LiveReport({
-  transportId,
-  onSourceClick,
-}: {
-  transportId: string;
-  onSourceClick?: (segmentIds: string[]) => void;
-}) {
+const ACUITY_LABEL: Record<number, string> = {
+  1: "Critical",
+  2: "Emergent",
+  3: "Urgent",
+  4: "Less Urgent",
+  5: "Non-Urgent",
+};
+
+const VITAL_LABEL: Record<string, string> = {
+  bp: "Blood Pressure", hr: "Heart Rate", rr: "Resp. Rate",
+  spo2: "SpO2", temp: "Temperature", gcs: "GCS",
+};
+
+export function LiveReport({ transportId }: { transportId: string }) {
   const [report, setReport] = useState<Report | null>(null);
-  const [claims, setClaims] = useState<Claim[]>([]);
-  const [signing, setSigning] = useState(false);
-  // Broadcast callbacks close over the render they were created in, so
-  // reading `report` inside them would see a stale value forever (the
-  // effect only runs once, on transportId change). Track the current
-  // report id in a ref instead, updated synchronously alongside state.
   const currentReportIdRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -57,13 +59,6 @@ export function LiveReport({
       if (cancelled) return;
       setReport(latest);
       currentReportIdRef.current = latest?.id ?? null;
-      if (latest) {
-        const { data: claimRows } = await supabase
-          .from("report_claims")
-          .select("*")
-          .eq("report_id", latest.id);
-        if (!cancelled) setClaims(claimRows ?? []);
-      }
     }
 
     loadLatest();
@@ -77,19 +72,7 @@ export function LiveReport({
           if (currentReportIdRef.current !== incoming.id) {
             currentReportIdRef.current = incoming.id;
             setReport(incoming);
-            setClaims([]);
           }
-        } else if (p.table === "report_claims") {
-          const claim = p.record as Claim;
-          if (claim.report_id === currentReportIdRef.current) {
-            setClaims((prev) => [...prev, claim]);
-          }
-        }
-      })
-      .on("broadcast", { event: "UPDATE" }, (payload) => {
-        const p = payload.payload as { table: string; record: Report };
-        if (p.table === "reports" && p.record.id === currentReportIdRef.current) {
-          setReport(p.record);
         }
       })
       .subscribe();
@@ -101,191 +84,145 @@ export function LiveReport({
   }, [transportId]);
 
   async function handleSign() {
-    setSigning(true);
+    if (!report) return;
     const supabase = createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user || !report) {
-      setSigning(false);
-      return;
-    }
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
     const { error } = await supabase
       .from("reports")
       .update({ signed_by: user.id, signed_at: new Date().toISOString() })
       .eq("id", report.id);
-    setSigning(false);
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
+    if (error) { toast.error(error.message); return; }
     setReport({ ...report, signed_by: user.id, signed_at: new Date().toISOString() });
   }
 
   if (!report) {
-    return <p className="text-sm text-muted-foreground">Waiting for the first report…</p>;
+    return (
+      <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-muted border-t-primary" />
+        <p className="text-sm text-muted-foreground">Waiting for medic report…</p>
+      </div>
+    );
   }
 
   const soap = report.soap as Soap;
-  const claimsByField = new Map(claims.map((c) => [c.field, c]));
+  const acuity = soap.triage_acuity?.score;
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-5">
+
+      {/* ── Status bar ── */}
       <div className="flex items-center justify-between">
-        <Badge
-          variant="outline"
-          className={report.signed_by ? "border-success/30 bg-success/10 text-success-text" : "border-warning/30 bg-warning/10 text-warning-text"}
-        >
-          {report.signed_by ? "Signed" : "UNVERIFIED — EN ROUTE"}
-        </Badge>
+        <span className={`rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide ${report.signed_by ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"}`}>
+          {report.signed_by ? "✓ Signed" : "En route — unverified"}
+        </span>
         {!report.signed_by && (
-          <Button size="sm" onClick={handleSign} disabled={signing}>
-            {signing ? "Signing…" : "Sign report"}
-          </Button>
+          <button
+            onClick={handleSign}
+            className="rounded-lg bg-foreground px-4 py-1.5 text-xs font-semibold text-background hover:opacity-80"
+          >
+            Sign report
+          </button>
         )}
       </div>
 
-      {soap.chief_complaint && (
-        <Section title="Chief complaint">
-          <ClaimSource claim={claimsByField.get("chief_complaint")} onSourceClick={onSourceClick}>
-            {soap.chief_complaint}
-          </ClaimSource>
-        </Section>
-      )}
-
-      {soap.triage_acuity && (
-        <Section title="Triage acuity (AI-suggested — confirm before acting)">
-          <ClaimSource claim={claimsByField.get("triage_acuity")} onSourceClick={onSourceClick}>
-            <span className="font-semibold">Level {soap.triage_acuity.score}</span> —{" "}
+      {/* ── Patient summary card ── */}
+      <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Chief complaint</p>
+            <p className="mt-1 text-xl font-semibold text-foreground">
+              {soap.chief_complaint ?? "—"}
+            </p>
+            {soap.soap?.assessment && (
+              <p className="mt-2 text-sm text-muted-foreground">{soap.soap.assessment}</p>
+            )}
+          </div>
+          {acuity && (
+            <div className={`flex flex-col items-center rounded-xl px-4 py-2 ${ACUITY_COLOR[acuity] ?? "bg-muted text-foreground"}`}>
+              <span className="text-2xl font-black">{acuity}</span>
+              <span className="text-xs font-semibold">{ACUITY_LABEL[acuity]}</span>
+            </div>
+          )}
+        </div>
+        {acuity && soap.triage_acuity?.reasoning && (
+          <p className="mt-3 rounded-lg bg-muted/50 p-3 text-xs text-muted-foreground">
+            <span className="font-semibold text-foreground">AI assessment: </span>
             {soap.triage_acuity.reasoning}
-          </ClaimSource>
-        </Section>
-      )}
+          </p>
+        )}
+      </div>
 
-      {soap.soap && (
-        <Section title="SOAP">
-          <div className="flex flex-col gap-2 text-sm">
-            {soap.soap.subjective && (
-              <p>
-                <span className="font-medium">S: </span>
-                <ClaimSource claim={claimsByField.get("soap.subjective")} onSourceClick={onSourceClick}>
-                  {soap.soap.subjective}
-                </ClaimSource>
-              </p>
-            )}
-            {soap.soap.objective && (
-              <p>
-                <span className="font-medium">O: </span>
-                <ClaimSource claim={claimsByField.get("soap.objective")} onSourceClick={onSourceClick}>
-                  {soap.soap.objective}
-                </ClaimSource>
-              </p>
-            )}
-            {soap.soap.assessment && (
-              <p>
-                <span className="font-medium">A: </span>
-                <ClaimSource claim={claimsByField.get("soap.assessment")} onSourceClick={onSourceClick}>
-                  {soap.soap.assessment}
-                </ClaimSource>
-              </p>
-            )}
-            {soap.soap.plan && (
-              <p>
-                <span className="font-medium">P: </span>
-                <ClaimSource claim={claimsByField.get("soap.plan")} onSourceClick={onSourceClick}>
-                  {soap.soap.plan}
-                </ClaimSource>
-              </p>
-            )}
-          </div>
-        </Section>
-      )}
-
+      {/* ── Vitals ── */}
       {!!soap.vitals?.length && (
-        <Section title="Vitals">
-          <ul className="flex flex-col gap-1 text-sm">
+        <div>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Vitals</p>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             {soap.vitals.map((v, i) => (
-              <li key={i}>
-                <ClaimSource claim={claimsByField.get(`vitals[${i}]`)} onSourceClick={onSourceClick}>
-                  <span className="uppercase text-muted-foreground">{v.type}</span> {v.value}
-                </ClaimSource>
-              </li>
-            ))}
-          </ul>
-        </Section>
-      )}
-
-      {!!soap.medications?.length && (
-        <Section title="Medications given">
-          <ul className="flex flex-col gap-1 text-sm">
-            {soap.medications.map((m, i) => (
-              <li key={i}>
-                <ClaimSource claim={claimsByField.get(`medications[${i}]`)} onSourceClick={onSourceClick}>
-                  {m.name} — {m.dose} {m.route}
-                </ClaimSource>
-              </li>
-            ))}
-          </ul>
-        </Section>
-      )}
-
-      {!!soap.procedures?.length && (
-        <Section title="Procedures">
-          <ul className="flex flex-col gap-1 text-sm">
-            {soap.procedures.map((p, i) => (
-              <li key={i}>
-                <ClaimSource claim={claimsByField.get(`procedures[${i}]`)} onSourceClick={onSourceClick}>
-                  {p.name}
-                </ClaimSource>
-              </li>
-            ))}
-          </ul>
-        </Section>
-      )}
-
-      {!!soap.predicted_resources?.length && (
-        <Section title="Prepare for arrival">
-          <div className="flex flex-wrap gap-2">
-            {soap.predicted_resources.map((r, i) => (
-              <Badge key={i} variant="outline">
-                {r}
-              </Badge>
+              <div key={i} className="rounded-xl border border-border bg-card p-4 text-center shadow-sm">
+                <p className="text-xs text-muted-foreground">{VITAL_LABEL[v.type] ?? v.type.toUpperCase()}</p>
+                <p className="mt-1 text-2xl font-bold text-foreground">{v.value}</p>
+              </div>
             ))}
           </div>
-        </Section>
+        </div>
+      )}
+
+      {/* ── Medications given ── */}
+      {!!soap.medications?.length && (
+        <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Medications given</p>
+          <div className="flex flex-col gap-2">
+            {soap.medications.map((m, i) => (
+              <div key={i} className="flex items-center gap-3 rounded-lg bg-muted/40 px-3 py-2">
+                <span className="text-lg">💊</span>
+                <div>
+                  <p className="text-sm font-semibold text-foreground">{m.name}</p>
+                  <p className="text-xs text-muted-foreground">{m.dose} {m.route}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── Allergies ── */}
+      {!!soap.allergies?.length && (
+        <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-4">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-destructive">⚠ Allergies</p>
+          <div className="flex flex-wrap gap-2">
+            {soap.allergies.map((a, i) => (
+              <span key={i} className="rounded-full border border-destructive/30 px-3 py-1 text-sm font-medium text-destructive">{a}</span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── Prepare for arrival ── */}
+      {!!soap.predicted_resources?.length && (
+        <div className="rounded-2xl border-2 border-primary/20 bg-primary/5 p-4">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-primary">🏥 Prepare for arrival</p>
+          <div className="flex flex-col gap-2">
+            {soap.predicted_resources.map((r, i) => (
+              <div key={i} className="flex items-center gap-2 text-sm font-medium text-foreground">
+                <span className="text-primary">→</span> {r}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── Procedures ── */}
+      {!!soap.procedures?.length && (
+        <div>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Procedures done</p>
+          <div className="flex flex-col gap-1">
+            {soap.procedures.map((p, i) => (
+              <p key={i} className="text-sm text-foreground">• {p.name}</p>
+            ))}
+          </div>
+        </div>
       )}
     </div>
-  );
-}
-
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div className="flex flex-col gap-2">
-      <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{title}</h3>
-      {children}
-    </div>
-  );
-}
-
-function ClaimSource({
-  claim,
-  onSourceClick,
-  children,
-}: {
-  claim: Claim | undefined;
-  onSourceClick?: (segmentIds: string[]) => void;
-  children: React.ReactNode;
-}) {
-  const low = claim && claim.confidence < LOW_CONFIDENCE_THRESHOLD;
-  return (
-    <button
-      type="button"
-      disabled={!claim}
-      onClick={() => claim && onSourceClick?.(claim.source_segment_ids)}
-      className={`text-left ${claim ? "cursor-pointer underline decoration-dotted underline-offset-2 hover:decoration-solid" : ""} ${low ? "text-warning-text" : ""}`}
-      title={claim ? `Confidence: ${(claim.confidence * 100).toFixed(0)}% — click to view source` : undefined}
-    >
-      {children}
-    </button>
   );
 }

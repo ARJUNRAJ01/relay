@@ -24,10 +24,7 @@ export default function LoginPage() {
 
   const supabase = createClient();
 
-  const password =
-    email === "demo.hospital@relay.test"
-      ? "Demo123456!"
-      : "Demo123456!";
+  const password = "Demo1234!";
 
   const { data, error } = await supabase.auth.signInWithPassword({
     email,

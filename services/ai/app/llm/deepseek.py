@@ -13,7 +13,7 @@ from app.settings import settings
 logger = logging.getLogger("relay.llm.deepseek")
 
 _BASE_URL = "https://api.deepseek.com"
-_MODEL = "deepseek-flash"
+_MODEL = "deepseek-chat"
 
 
 class DeepSeekProvider(LLMProvider):
