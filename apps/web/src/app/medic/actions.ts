@@ -25,7 +25,7 @@ export async function startTransport(formData: FormData) {
     .maybeSingle();
 
   if (!profile || profile.role !== "medic" || !profile.unit_id) {
-    throw new Error("Only a medic assigned to a unit can start a transport.");
+    redirect("/login");
   }
 
   let incidentId = formData.get("incidentId");
