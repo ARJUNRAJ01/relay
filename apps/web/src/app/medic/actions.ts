@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { serverEnv, env } from "@/lib/env";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 
 export async function startTransport(formData: FormData) {
   const hospitalId = formData.get("hospitalId");
@@ -18,7 +18,8 @@ export async function startTransport(formData: FormData) {
     redirect("/login");
   }
 
-  const { data: profile } = await supabase
+  const admin = createAdminClient();
+  const { data: profile } = await admin
     .from("profiles")
     .select("role, unit_id")
     .eq("id", user.id)
